@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
   // get query values
-  const { category, price, sortBy, page = 1, limit = 5 } = req.query
+  const { category, price, sortBy, minPrice, maxPrice } = req.query
 
   // create a query object for db
   const query = {}
@@ -38,6 +38,14 @@ router.get('/', async (req, res) => {
     query.price = { $lte: price }
   }
 
+  if (minPrice) {
+    query.price = { $gte: minPrice }
+  }
+
+  if (maxPrice) {
+    query.price = { $lte: maxPrice }
+  }
+
   if (sortBy) {
     const [price, value] = sortBy.split('_')
     // console.log('VALUES: ', values)
@@ -47,16 +55,21 @@ router.get('/', async (req, res) => {
   console.log('QUERY OBJ: ', query)
   console.log('SORT OBJ: ', sort)
 
-  // let page = 2
-  // let limit = 2
+  if (!page) {
+    page = 1
+  }
+
+  if (!limit) {
+    limit = 10
+  }
   //  category: 0,
   try {
     const products = await Product.find(query)
-    .select({ __v: 0, _id: 0 })
-    .sort(sort)
-    .skip((page - 1) * limit)
-    .limit(limit) 
-    // 1st is the query, 2nd is the projection, 3rd is the sorting 
+      .select({ __v: 0, _id: 0 })
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit)
+    // 1st is the query, 2nd is the projection, 3rd is the sorting
     res.status(200).json(products)
   } catch (error) {
     console.error(error)
